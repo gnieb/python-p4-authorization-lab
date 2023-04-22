@@ -12,10 +12,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
-migrate = Migrate(app, db)
-
 db.init_app(app)
-
+migrate = Migrate(app, db)
 api = Api(app)
 
 class ClearSession(Resource):
@@ -84,15 +82,29 @@ class CheckSession(Resource):
         
         return {}, 401
 
+
+
+
 class MemberOnlyIndex(Resource):
     
     def get(self):
-        pass
+        
+        if not session['user_id']:
+            return make_response({"error":"Unauthorized Content"}, 401)
+        
+        articles = [a.to_dict() for a in Article.query.filter(Article.is_member_only == True)]
+        return make_response(articles, 200) 
+        
+
 
 class MemberOnlyArticle(Resource):
     
     def get(self, id):
-        pass
+        if not session['user_id']:
+            return make_response({"error":"Unauthorized Content"}, 401)
+        
+        article = Article.query.filter_by(id=id).first()
+        return make_response(article.to_dict(), 200)
 
 api.add_resource(ClearSession, '/clear', endpoint='clear')
 api.add_resource(IndexArticle, '/articles', endpoint='article_list')
